@@ -1,9 +1,14 @@
 package me.cakegame.database.edit.database;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,12 +45,18 @@ public class CGDataBase extends SQLiteOpenHelper {
     public static List<String> getAllUserID() {
         if (CGDataBase.CGDB == null) return null;
         List<String> ids = new ArrayList<>();
-        Cursor cursor =CGDataBase.CGDB.getReadableDatabase().rawQuery("SELECT distinct ID FROM Basic_User",null);
-        while (cursor.moveToNext())
+        try {
+            Cursor cursor = CGDataBase.CGDB.getReadableDatabase().rawQuery("SELECT distinct ID FROM Basic_User",null);
+            while (cursor.moveToNext())
+            {
+                ids.add(cursor.getString(0));
+            }
+            cursor.close();
+        }catch (SQLiteException e)
         {
-            ids.add(cursor.getString(0));
+            Log.d("SQLiteException", e.toString());
         }
-        cursor.close();
+
         return ids;
     }
 
@@ -53,16 +64,24 @@ public class CGDataBase extends SQLiteOpenHelper {
         if (CGDataBase.CGDB == null) return null;
 
         List<String> attr = new ArrayList<>();
+        try {
 
-        Cursor cursor = CGDataBase.CGDB.getReadableDatabase().rawQuery("SELECT Node,Item,Data FROM Basic_User WHERE ID = ?",new String[]{userid});
-        while (cursor.moveToNext())
+            Cursor cursor = CGDataBase.CGDB.getReadableDatabase().rawQuery("SELECT Node,Item,Data FROM Basic_User WHERE ID = ?", new String[]{userid});
+            while (cursor.moveToNext()) {
+                attr.add(cursor.getString(0));
+                attr.add(cursor.getString(1));
+                attr.add(cursor.getString(2));
+            }
+            cursor.close();
+        }catch (SQLiteException e)
         {
-            attr.add(attrTranslation(cursor.getString(0)));
-            attr.add(attrTranslation(cursor.getString(1)));
-            attr.add(cursor.getString(2));
+            Log.d("SQLiteException", e.toString());
         }
-        cursor.close();
         return attr;
+    }
+
+    public static void updateUserAttr(String userid,String node,String item,String data) {
+        CGDataBase.CGDB.getWritableDatabase().execSQL("UPDATE Basic_User SET data=? WHERE ID=? AND Node=? AND Item=?", new String[]{data,userid,node,item});
     }
 
     public static String attrTranslation(String name) {
@@ -115,5 +134,14 @@ public class CGDataBase extends SQLiteOpenHelper {
 
         }
         return name;
+    }
+
+    public static void close_database(Context context){
+        if (CGDB != null)
+        {
+            CGDB.close();
+            CGDB = null;
+            LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent("database.close"));
+        }
     }
 }

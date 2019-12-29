@@ -88,9 +88,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         else
                         {
-                            CGDataBase.CGDB.close();
-                            CGDataBase.CGDB = null;
-                            LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(new Intent("database.close"));
+                            CGDataBase.close_database(MainActivity.this);
                             Toast.makeText(MainActivity.this, "数据库已关闭", Toast.LENGTH_SHORT).show();
                         }
                         break;
@@ -147,10 +145,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSelect(File file) {
                 Log.d("open database", file.getPath());
-                if (CGDataBase.CGDB != null)
-                {
-                    CGDataBase.CGDB.close();
-                }
+                CGDataBase.close_database(MainActivity.this);
                 if (!CGDataBase.openDataBase(MainActivity.this, file.getPath()))
                 {
                     Toast.makeText(MainActivity.this, "数据库打开失败", Toast.LENGTH_SHORT).show();
@@ -163,4 +158,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        CGDataBase.close_database(MainActivity.this);
+    }
+
+
 }
